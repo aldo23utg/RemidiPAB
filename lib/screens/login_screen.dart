@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'forgot_password_screen.dart';
 import 'welcome_screen.dart';
+import 'register_screen.dart'; // Ini baris yang sebelumnya terlewat
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});

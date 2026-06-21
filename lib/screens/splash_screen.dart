@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-import 'register_screen.dart'; // Kita ubah import-nya ke halaman daftar
+import 'package:shared_preferences/shared_preferences.dart';
+import 'register_screen.dart';
+import 'dashboard_screen.dart'; // Kita akan buat file ini setelah ini
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -13,14 +15,33 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    // Membuat delay tepat 3 detik sesuai spesifikasi
-    Future.delayed(const Duration(seconds: 3), () {
-      // Navigasi ke halaman Register dan hapus Splash Screen dari tumpukan (stack)
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const RegisterScreen()),
-      );
-    });
+    _checkSession();
+  }
+
+  // Fungsi untuk mengecek sesi login dengan delay 3 detik
+  Future<void> _checkSession() async {
+    // Memberikan delay 3 detik sesuai spesifikasi
+    await Future.delayed(const Duration(seconds: 3));
+
+    // Mengecek status login di SharedPreferences
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    bool isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
+
+    if (mounted) {
+      if (isLoggedIn) {
+        // Jika sudah login, langsung ke Dashboard
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const DashboardScreen()),
+        );
+      } else {
+        // Jika belum login, ke Halaman Daftar
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const RegisterScreen()),
+        );
+      }
+    }
   }
 
   @override
@@ -44,7 +65,6 @@ class _SplashScreenState extends State<SplashScreen> {
               ),
             ),
             const SizedBox(height: 40),
-            // Menampilkan loading indikator di tengah layar
             const CircularProgressIndicator(),
           ],
         ),
