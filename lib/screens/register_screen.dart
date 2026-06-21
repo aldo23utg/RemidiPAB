@@ -1,18 +1,69 @@
 import 'package:flutter/material.dart';
-import 'login_screen.dart'; // Pastikan file login_screen.dart yang kita buat sebelumnya ada di folder yang sama
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'login_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
-  
+
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  // Controller untuk menangkap teks yang diketik pengguna
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  bool _isLoading = false; // Untuk menampilkan indikator loading saat proses daftar
+
+  // Fungsi untuk mendaftarkan akun ke Firebase
+  Future<void> _registerAccount() async {
+    // Validasi form tidak boleh kosong
+    if (_nameController.text.isEmpty || _emailController.text.isEmpty || _passwordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Semua kolom harus diisi!')));
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // 1. Membuat akun di Firebase Authentication
+      UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+      );
+
+      // 2. Menyimpan data tambahan (Nama, dll) ke Firestore di koleksi "users"
+      await FirebaseFirestore.instance.collection('users').doc(userCredential.user!.uid).set({
+        'name': _nameController.text.trim(),
+        'email': _emailController.text.trim(),
+        'instagram': '-', // Default kosong, bisa diupdate nanti sesuai spesifikasi Halaman Profile
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      // Jika berhasil, tampilkan pesan dan pindah ke halaman Login
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Pendaftaran Berhasil! Silakan Login.')));
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      // Menangkap dan menampilkan error dari Firebase
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message ?? 'Terjadi kesalahan')));
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -33,11 +84,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 40),
-              // Menampilkan Logo dari folder assets
-              Image.asset(
-                'assets/images/logo.jpg',
-                height: 120,
-              ),
+              Image.asset('assets/images/logo.jpg', height: 120),
               const SizedBox(height: 40),
               const Text(
                 'Buat Akun Baru',
@@ -45,58 +92,37 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 30),
-              // Input Nama Lengkap
               TextField(
                 controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Nama',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.person),
-                ),
+                decoration: const InputDecoration(labelText: 'Nama Lengkap', border: OutlineInputBorder(), prefixIcon: Icon(Icons.person)),
               ),
               const SizedBox(height: 16),
-              // Input Email
               TextField(
                 controller: _emailController,
-                decoration: const InputDecoration(
-                  labelText: 'Email',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.email),
-                ),
+                decoration: const InputDecoration(labelText: 'Email', border: OutlineInputBorder(), prefixIcon: Icon(Icons.email)),
                 keyboardType: TextInputType.emailAddress,
               ),
               const SizedBox(height: 16),
-              // Input Password
               TextField(
                 controller: _passwordController,
-                decoration: const InputDecoration(
-                  labelText: 'Password',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.lock),
-                ),
-                obscureText: true, // Menyembunyikan teks password
+                decoration: const InputDecoration(labelText: 'Password', border: OutlineInputBorder(), prefixIcon: Icon(Icons.lock)),
+                obscureText: true,
               ),
               const SizedBox(height: 24),
-              // Tombol Daftar
-              ElevatedButton(
-                onPressed: () {
-                  // TODO: Nanti kita hubungkan ke Firebase Auth di sini
-                  print("Tombol Daftar ditekan!");
-                },
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                child: const Text('Daftar', style: TextStyle(fontSize: 18)),
-              ),
+              
+              // Tombol Daftar dengan Loading Indicator
+              _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : ElevatedButton(
+                      onPressed: _registerAccount, // Memanggil fungsi daftar
+                      style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
+                      child: const Text('Daftar', style: TextStyle(fontSize: 18)),
+                    ),
+              
               const SizedBox(height: 16),
-              // Tombol Navigasi ke Login
               TextButton(
                 onPressed: () {
-                  // Membuka halaman login dan menutup halaman daftar
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (context) => const LoginScreen()),
-                  );
+                  Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const LoginScreen()));
                 },
                 child: const Text('Apakah sudah punya akun? Login'),
               ),
