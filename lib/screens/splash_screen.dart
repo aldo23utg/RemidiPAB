@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'dart:async'; // Dibutuhkan untuk Future.delayed
-import 'login_screen.dart';
+import 'dart:async';
+import 'register_screen.dart'; // Kita ubah import-nya ke halaman daftar
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -15,10 +15,10 @@ class _SplashScreenState extends State<SplashScreen> {
     super.initState();
     // Membuat delay tepat 3 detik sesuai spesifikasi
     Future.delayed(const Duration(seconds: 3), () {
-      // Navigasi ke halaman Login dan hapus Splash Screen dari tumpukan (stack)
+      // Navigasi ke halaman Register dan hapus Splash Screen dari tumpukan (stack)
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
+        MaterialPageRoute(builder: (context) => const RegisterScreen()),
       );
     });
   }
@@ -30,9 +30,8 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Nanti icon ini diganti dengan Logo E-Commerce dari Freepik
             const Icon(
-              Icons.language, // Ikon sementara
+              Icons.language,
               size: 100,
               color: Colors.blue,
             ),
