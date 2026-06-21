@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
-import 'home_view.dart'; // Menghubungkan ke file home_view.dart yang berisi feed berita
+import 'home_view.dart';
+import 'favorite_view.dart';       // Import file baru
+import 'notification_view.dart';   // Import file baru
+import 'profile_view.dart';        // Import file baru
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -9,15 +12,14 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  // Index untuk melacak menu tab mana yang sedang aktif
   int _currentIndex = 0;
 
-  // Daftar tampilan halaman yang akan berganti saat BottomNavigationBar diklik
+  // Memasukkan view yang baru kita buat ke dalam list pages
   final List<Widget> _pages = [
-    const HomeView(), // Sekarang halaman pertamanya menggunakan HomeView asli dari API
-    const Center(child: Text("Halaman Favorite akan di sini")),
-    const Center(child: Text("Halaman Notification akan di sini")),
-    const Center(child: Text("Halaman Profile akan di sini")),
+    const HomeView(),
+    const FavoriteView(),
+    const NotificationView(),
+    const ProfileView(),
   ];
 
   @override
@@ -25,17 +27,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('SpaceNews Core'),
-        automaticallyImplyLeading: false, // Menghilangkan tombol back default agar tidak bisa kembali ke login
+        automaticallyImplyLeading: false, 
       ),
-      body: _pages[_currentIndex], // Menampilkan halaman sesuai index yang dipilih
+      body: _pages[_currentIndex], 
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) {
           setState(() {
-            _currentIndex = index; // Mengubah halaman aktif saat tab diklik
+            _currentIndex = index; 
           });
         },
-        type: BottomNavigationBarType.fixed, // Memastikan semua teks dan ikon muncul
+        type: BottomNavigationBarType.fixed, 
         selectedItemColor: Colors.blue,
         unselectedItemColor: Colors.grey,
         items: const [
