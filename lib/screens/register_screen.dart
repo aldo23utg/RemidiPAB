@@ -14,54 +14,59 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  bool _isLoading = false; // Untuk menampilkan indikator loading saat proses daftar
+  bool _isLoading = false;
+  bool _obscurePassword = true;
 
-  // Fungsi untuk mendaftarkan akun ke Firebase
   Future<void> _registerAccount() async {
-    // Validasi form tidak boleh kosong
     if (_nameController.text.isEmpty || _emailController.text.isEmpty || _passwordController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Semua kolom harus diisi!')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Semua kolom harus diisi!'), backgroundColor: Colors.redAccent),
+      );
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
 
     try {
-      // 1. Membuat akun di Firebase Authentication
       UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
 
-      // 2. Menyimpan data tambahan (Nama, dll) ke Firestore di koleksi "users"
       await FirebaseFirestore.instance.collection('users').doc(userCredential.user!.uid).set({
         'name': _nameController.text.trim(),
         'email': _emailController.text.trim(),
-        'instagram': '-', // Default kosong, bisa diupdate nanti sesuai spesifikasi Halaman Profile
+        'instagram': '-',
         'createdAt': FieldValue.serverTimestamp(),
       });
 
-      // Jika berhasil, tampilkan pesan dan pindah ke halaman Login
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Pendaftaran Berhasil! Silakan Login.')));
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const LoginScreen()),
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Pendaftaran Berhasil! Silakan Login.'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const LoginScreen()));
       }
     } on FirebaseAuthException catch (e) {
-      // Menangkap dan menampilkan error dari Firebase
+      String errorMessage = 'Terjadi kesalahan.';
+      if (e.code == 'weak-password') {
+        errorMessage = 'Password terlalu lemah (minimal 6 karakter).';
+      } else if (e.code == 'email-already-in-use') {
+        errorMessage = 'Email sudah terdaftar. Silakan login.';
+      } else if (e.code == 'invalid-email') {
+        errorMessage = 'Format email tidak valid.';
+      }
+
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message ?? 'Terjadi kesalahan')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errorMessage), backgroundColor: Colors.redAccent),
+        );
       }
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -86,44 +91,54 @@ class _RegisterScreenState extends State<RegisterScreen> {
               const SizedBox(height: 40),
               Image.asset('assets/images/logo.jpg', height: 120),
               const SizedBox(height: 40),
-              const Text(
-                'Buat Akun Baru',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
-              ),
+              const Text('Buat Akun Baru', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
               const SizedBox(height: 30),
               TextField(
                 controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Nama Lengkap', border: OutlineInputBorder(), prefixIcon: Icon(Icons.person)),
+                decoration: InputDecoration(
+                  labelText: 'Nama Lengkap',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  prefixIcon: const Icon(Icons.person),
+                ),
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: _emailController,
-                decoration: const InputDecoration(labelText: 'Email', border: OutlineInputBorder(), prefixIcon: Icon(Icons.email)),
+                decoration: InputDecoration(
+                  labelText: 'Email',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  prefixIcon: const Icon(Icons.email),
+                ),
                 keyboardType: TextInputType.emailAddress,
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: _passwordController,
-                decoration: const InputDecoration(labelText: 'Password', border: OutlineInputBorder(), prefixIcon: Icon(Icons.lock)),
-                obscureText: true,
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  prefixIcon: const Icon(Icons.lock),
+                  suffixIcon: IconButton(
+                    icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
+                    onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                  ),
+                ),
+                obscureText: _obscurePassword,
               ),
               const SizedBox(height: 24),
-              
-              // Tombol Daftar dengan Loading Indicator
               _isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : ElevatedButton(
-                      onPressed: _registerAccount, // Memanggil fungsi daftar
-                      style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
+                      onPressed: _registerAccount,
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
                       child: const Text('Daftar', style: TextStyle(fontSize: 18)),
                     ),
-              
               const SizedBox(height: 16),
               TextButton(
-                onPressed: () {
-                  Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const LoginScreen()));
-                },
+                onPressed: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const LoginScreen())),
                 child: const Text('Apakah sudah punya akun? Login'),
               ),
             ],
